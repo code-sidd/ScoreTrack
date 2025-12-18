@@ -4,6 +4,6 @@
 
   <p> </p>
 
-  <a href="https://aistudio.google.com/apps">Start tracking</a>
+  <a href="">Start tracking</a>
 
 </div>
