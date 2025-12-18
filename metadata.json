@@ -1,0 +1,7 @@
+{
+  "name": "CricTrackPro",
+  "description": "A comprehensive cricket scoring and tracking application featuring international live scores, ball-by-ball amateur match scoring, and deep player statistics.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
