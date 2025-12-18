@@ -13,8 +13,8 @@ export const MOCK_INTERNATIONAL_MATCHES: Match[] = [
     status: MatchStatus.LIVE,
     innings: [
       {
-        battingTeamId: 'India',
-        bowlingTeamId: 'Australia',
+        // Fix: Changed battingTeamId to teamId and removed unknown property bowlingTeamId
+        teamId: 'India',
         totalRuns: 345,
         wickets: 4,
         overs: 42,
@@ -55,8 +55,8 @@ export const MOCK_LOCAL_MATCHES: Match[] = [
     status: MatchStatus.LIVE,
     innings: [
       {
-        battingTeamId: 'Tech Titans',
-        bowlingTeamId: 'Code Crushers',
+        // Fix: Changed battingTeamId to teamId and removed unknown property bowlingTeamId
+        teamId: 'Tech Titans',
         totalRuns: 82,
         wickets: 2,
         overs: 8,

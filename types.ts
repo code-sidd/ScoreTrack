@@ -7,7 +7,9 @@ export enum MatchType {
 export enum MatchStatus {
   LIVE = 'LIVE',
   COMPLETED = 'COMPLETED',
-  UPCOMING = 'UPCOMING'
+  UPCOMING = 'UPCOMING',
+  STUMPS = 'STUMPS',
+  DELAYED = 'DELAYED'
 }
 
 export enum ExtraType {
@@ -51,16 +53,12 @@ export interface Delivery {
 }
 
 export interface Inning {
-  battingTeamId: string;
-  bowlingTeamId: string;
+  teamId: string;
   totalRuns: number;
   wickets: number;
   overs: number;
   balls: number;
   deliveries: Delivery[];
-  strikerId?: string;
-  nonStrikerId?: string;
-  bowlerId?: string;
 }
 
 export interface Match {
@@ -71,6 +69,7 @@ export interface Match {
   teamB: string;
   overs: number;
   status: MatchStatus;
+  statusText?: string;
   innings: Inning[];
   currentInning: number;
   venue: string;
@@ -78,6 +77,7 @@ export interface Match {
   source?: string;
   lastUpdated?: number;
   summary?: string;
+  result?: string;
 }
 
 export interface User {

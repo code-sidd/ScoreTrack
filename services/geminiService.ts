@@ -6,15 +6,14 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const getMatchInsights = async (match: Match): Promise<string> => {
   const prompt = `
-    Analyze this cricket match and provide a short, professional, and exciting summary or predictive insight.
+    Analyze this cricket match and provide a short, professional summary.
     Match: ${match.title}
     Teams: ${match.teamA} vs ${match.teamB}
-    Current Score: ${match.innings[0]?.totalRuns || 0}/${match.innings[0]?.wickets || 0} in ${match.innings[0]?.overs || 0}.${match.innings[0]?.balls || 0} overs.
     Venue: ${match.venue}
-    Status: ${match.status}
-    Format: ${match.overs} overs per inning.
+    Status: ${match.status} ${match.statusText || ''}
+    Current Inning Data: ${JSON.stringify(match.innings)}
 
-    Provide the summary in 3-4 sentences.
+    Provide the summary in 3 sentences.
   `;
 
   try {
@@ -22,32 +21,28 @@ export const getMatchInsights = async (match: Match): Promise<string> => {
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
-    return response.text || "No insights available at the moment.";
+    return response.text || "No insights available.";
   } catch (error) {
     console.error("Gemini Error:", error);
     return "Failed to generate AI insights.";
   }
 };
 
-/**
- * Fetches real current international cricket matches using Google Search grounding.
- */
 export const fetchLiveInternationalMatches = async (): Promise<Match[]> => {
   try {
-    const prompt = `Find current and very recent international cricket matches (last 48 hours). 
-    Return a JSON array of objects with these properties:
-    - id (string)
-    - title (string, e.g. "India vs South Africa 2nd T20I")
-    - teamA (string)
-    - teamB (string)
-    - overs (number, total match overs)
-    - status (string: "LIVE", "COMPLETED", or "UPCOMING")
+    const prompt = `Find current live or very recent international cricket matches (last 24-48 hours).
+    Return a JSON array of match objects.
+    Each object MUST have:
+    - id (unique string)
+    - title (string)
+    - teamA, teamB (strings)
+    - status ("LIVE", "COMPLETED", "STUMPS", "UPCOMING")
+    - statusText (short descriptive status like "Ind won by 4 wkts" or "Day 3 Stumps")
     - venue (string)
-    - date (string, YYYY-MM-DD)
-    - scoreA (string, e.g. "210/4")
-    - oversA (string, e.g. "20.0")
-    - battingTeam (string, either teamA or teamB)
-    - summary (string, current match situation)`;
+    - date (YYYY-MM-DD)
+    - teamAScore (string, e.g., "342/8 (50.0)")
+    - teamBScore (string, e.g., "210/4 (32.2)")
+    - battingTeam (string, either teamA or teamB)`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -60,31 +55,84 @@ export const fetchLiveInternationalMatches = async (): Promise<Match[]> => {
 
     const data = JSON.parse(response.text || "[]");
     
-    return data.map((item: any, index: number) => ({
-      id: item.id || `int-live-${index}`,
-      type: MatchType.INTERNATIONAL,
-      title: item.title,
-      teamA: item.teamA,
-      teamB: item.teamB,
-      overs: item.overs || 20,
-      status: (item.status || "LIVE") as MatchStatus,
-      venue: item.venue,
-      date: item.date,
-      source: "Gemini Real-time Search",
-      summary: item.summary,
-      innings: [{
-        battingTeamId: item.battingTeam || item.teamA,
-        bowlingTeamId: item.battingTeam === item.teamA ? item.teamB : item.teamA,
-        totalRuns: parseInt(item.scoreA?.split('/')[0]) || 0,
-        wickets: parseInt(item.scoreA?.split('/')[1]) || 0,
-        overs: Math.floor(parseFloat(item.oversA)) || 0,
-        balls: Math.round((parseFloat(item.oversA) % 1) * 10) || 0,
-        deliveries: []
-      }],
-      currentInning: 0
-    }));
+    return data.map((item: any, index: number) => {
+      const parseScore = (scoreStr: string) => {
+        if (!scoreStr) return { runs: 0, wkts: 0, ov: 0, b: 0 };
+        const match = scoreStr.match(/(\d+)\/(\d+)\s*\(([\d.]+)\)/);
+        if (!match) return { runs: 0, wkts: 0, ov: 0, b: 0 };
+        const ovFloat = parseFloat(match[3]);
+        return {
+          runs: parseInt(match[1]),
+          wkts: parseInt(match[2]),
+          ov: Math.floor(ovFloat),
+          b: Math.round((ovFloat % 1) * 10)
+        };
+      };
+
+      const scoreA = parseScore(item.teamAScore);
+      const scoreB = parseScore(item.teamBScore);
+
+      return {
+        id: item.id || `int-${index}`,
+        type: MatchType.INTERNATIONAL,
+        title: item.title,
+        teamA: item.teamA,
+        teamB: item.teamB,
+        overs: 50,
+        status: (item.status || "LIVE") as MatchStatus,
+        statusText: item.statusText,
+        venue: item.venue,
+        date: item.date,
+        source: "Search Grounding",
+        innings: [
+          {
+            teamId: item.teamA,
+            totalRuns: scoreA.runs,
+            wickets: scoreA.wkts,
+            overs: scoreA.ov,
+            balls: scoreA.b,
+            deliveries: []
+          },
+          {
+            teamId: item.teamB,
+            totalRuns: scoreB.runs,
+            wickets: scoreB.wkts,
+            overs: scoreB.ov,
+            balls: scoreB.b,
+            deliveries: []
+          }
+        ],
+        currentInning: item.battingTeam === item.teamB ? 1 : 0
+      };
+    });
   } catch (error) {
     console.error("Error fetching live matches:", error);
+    return [];
+  }
+};
+
+export const fetchRecentOverInsights = async (match: Match): Promise<{ball: number, desc: string, runs: number, isWicket: boolean}[]> => {
+  try {
+    const prompt = `Based on the latest data for the cricket match ${match.title}, generate a realistic JSON array of the last 6 balls (one over).
+    Each object should have:
+    - ball (1-6)
+    - desc (short action description like "Wide ball outside off", "Excellent yorker", "Smashed for SIX over long-on")
+    - runs (number)
+    - isWicket (boolean)
+    
+    Make it exciting and varied based on current match situation.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+        responseMimeType: "application/json",
+      },
+    });
+
+    return JSON.parse(response.text || "[]");
+  } catch (error) {
     return [];
   }
 };
