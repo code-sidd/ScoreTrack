@@ -31,6 +31,20 @@ export interface PlayerStats {
   bestBowling: string;
 }
 
+export interface PlayerMatchStats {
+  id: string;
+  name: string;
+  runs: number;
+  balls: number;
+  fours: number;
+  sixes: number;
+  overs: number;
+  ballsBowled: number;
+  runsConceded: number;
+  wickets: number;
+  isOut: boolean;
+}
+
 export interface Player {
   id: string;
   name: string;
@@ -59,6 +73,10 @@ export interface Inning {
   overs: number;
   balls: number;
   deliveries: Delivery[];
+  strikerId?: string;
+  nonStrikerId?: string;
+  currentBowlerId?: string;
+  playerStats: Record<string, PlayerMatchStats>;
 }
 
 export interface Match {
@@ -68,6 +86,7 @@ export interface Match {
   teamA: string;
   teamB: string;
   overs: number;
+  playerCount: number;
   status: MatchStatus;
   statusText?: string;
   innings: Inning[];
@@ -78,11 +97,8 @@ export interface Match {
   lastUpdated?: number;
   summary?: string;
   result?: string;
-}
-
-export interface User {
-  id: string;
-  username: string;
-  email: string;
-  role: 'admin' | 'scorer' | 'player' | 'viewer';
+  squadA?: string[];
+  squadB?: string[];
+  tossWinner?: string;
+  tossDecision?: 'bat' | 'bowl';
 }

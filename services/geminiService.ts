@@ -53,17 +53,23 @@ export const fetchLiveInternationalMatches = async (): Promise<Match[]> => {
       },
     });
 
+    // Extract grounding URLs as per requirements
+    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    const urls = groundingChunks?.map((chunk: any) => chunk.web?.uri).filter(Boolean) || [];
+    const sourceString = urls.length > 0 ? `Sources: ${urls.join(', ')}` : "Search Grounding";
+
+    // Attempting to parse text output which should be valid JSON due to responseMimeType config
     const data = JSON.parse(response.text || "[]");
     
     return data.map((item: any, index: number) => {
       const parseScore = (scoreStr: string) => {
         if (!scoreStr) return { runs: 0, wkts: 0, ov: 0, b: 0 };
-        const match = scoreStr.match(/(\d+)\/(\d+)\s*\(([\d.]+)\)/);
-        if (!match) return { runs: 0, wkts: 0, ov: 0, b: 0 };
-        const ovFloat = parseFloat(match[3]);
+        const matchResult = scoreStr.match(/(\d+)\/(\d+)\s*\(([\d.]+)\)/);
+        if (!matchResult) return { runs: 0, wkts: 0, ov: 0, b: 0 };
+        const ovFloat = parseFloat(matchResult[3]);
         return {
-          runs: parseInt(match[1]),
-          wkts: parseInt(match[2]),
+          runs: parseInt(matchResult[1]),
+          wkts: parseInt(matchResult[2]),
           ov: Math.floor(ovFloat),
           b: Math.round((ovFloat % 1) * 10)
         };
@@ -79,11 +85,12 @@ export const fetchLiveInternationalMatches = async (): Promise<Match[]> => {
         teamA: item.teamA,
         teamB: item.teamB,
         overs: 50,
+        playerCount: 11, // Standard international count
         status: (item.status || "LIVE") as MatchStatus,
         statusText: item.statusText,
         venue: item.venue,
         date: item.date,
-        source: "Search Grounding",
+        source: sourceString,
         innings: [
           {
             teamId: item.teamA,
@@ -91,7 +98,8 @@ export const fetchLiveInternationalMatches = async (): Promise<Match[]> => {
             wickets: scoreA.wkts,
             overs: scoreA.ov,
             balls: scoreA.b,
-            deliveries: []
+            deliveries: [],
+            playerStats: {} // Required by Inning interface
           },
           {
             teamId: item.teamB,
@@ -99,7 +107,8 @@ export const fetchLiveInternationalMatches = async (): Promise<Match[]> => {
             wickets: scoreB.wkts,
             overs: scoreB.ov,
             balls: scoreB.b,
-            deliveries: []
+            deliveries: [],
+            playerStats: {} // Required by Inning interface
           }
         ],
         currentInning: item.battingTeam === item.teamB ? 1 : 0

@@ -10,6 +10,8 @@ export const MOCK_INTERNATIONAL_MATCHES: Match[] = [
     teamA: 'India',
     teamB: 'Australia',
     overs: 50,
+    // Fix: Added missing required property playerCount
+    playerCount: 11,
     status: MatchStatus.LIVE,
     innings: [
       {
@@ -19,7 +21,9 @@ export const MOCK_INTERNATIONAL_MATCHES: Match[] = [
         wickets: 4,
         overs: 42,
         balls: 3,
-        deliveries: []
+        deliveries: [],
+        // Fix: Added missing required property playerStats
+        playerStats: {}
       }
     ],
     currentInning: 0,
@@ -35,6 +39,8 @@ export const MOCK_INTERNATIONAL_MATCHES: Match[] = [
     teamA: 'England',
     teamB: 'Australia',
     overs: 90,
+    // Fix: Added missing required property playerCount
+    playerCount: 11,
     status: MatchStatus.COMPLETED,
     innings: [],
     currentInning: 0,
@@ -52,6 +58,8 @@ export const MOCK_LOCAL_MATCHES: Match[] = [
     teamA: 'Tech Titans',
     teamB: 'Code Crushers',
     overs: 20,
+    // Fix: Added missing required property playerCount
+    playerCount: 11,
     status: MatchStatus.LIVE,
     innings: [
       {
@@ -61,7 +69,9 @@ export const MOCK_LOCAL_MATCHES: Match[] = [
         wickets: 2,
         overs: 8,
         balls: 4,
-        deliveries: []
+        deliveries: [],
+        // Fix: Added missing required property playerStats
+        playerStats: {}
       }
     ],
     currentInning: 0,

@@ -9,8 +9,8 @@ interface MatchCardProps {
 }
 
 const MatchCard: React.FC<MatchCardProps> = ({ match, onClick }) => {
-  const inningA = match.innings[0];
-  const inningB = match.innings[1];
+  const inningA = match.innings?.[0];
+  const inningB = match.innings?.[1];
 
   const getStatusColor = () => {
     switch(match.status) {
@@ -52,8 +52,8 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onClick }) => {
           <div className="flex-1">
             <h3 className="text-xl font-black dark:text-white truncate group-hover:text-blue-600 transition-colors uppercase italic">{match.teamA}</h3>
             <p className="text-lg font-black tabular-nums dark:text-slate-300">
-              {inningA.totalRuns}/{inningA.wickets}
-              <span className="text-[10px] text-slate-400 font-bold ml-1">({inningA.overs}.{inningA.balls})</span>
+              {inningA ? `${inningA.totalRuns}/${inningA.wickets}` : '0/0'}
+              {inningA && <span className="text-[10px] text-slate-400 font-bold ml-1">({inningA.overs}.{inningA.balls})</span>}
             </p>
           </div>
           <div className="flex flex-col items-center px-2">
@@ -63,8 +63,8 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onClick }) => {
           <div className="flex-1 text-right">
             <h3 className="text-xl font-black dark:text-white truncate group-hover:text-blue-600 transition-colors uppercase italic">{match.teamB}</h3>
             <p className="text-lg font-black tabular-nums dark:text-slate-300">
-              {inningB.totalRuns}/{inningB.wickets}
-              <span className="text-[10px] text-slate-400 font-bold ml-1">({inningB.overs}.{inningB.balls})</span>
+              {inningB ? `${inningB.totalRuns}/${inningB.wickets}` : '0/0'}
+              {inningB && <span className="text-[10px] text-slate-400 font-bold ml-1">({inningB.overs}.{inningB.balls})</span>}
             </p>
           </div>
         </div>

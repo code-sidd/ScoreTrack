@@ -25,13 +25,13 @@ const LiveMatchDetail: React.FC<LiveMatchDetailProps> = ({ match, onBack, onRefr
       fetchRecentOverInsights(match),
       getMatchInsights(match)
     ]);
-    setOverData(over);
-    setInsight(aiSummary);
+    setOverData(over || []);
+    setInsight(aiSummary || 'No summary available.');
     setIsLoading(false);
   };
 
-  const battingInning = match.innings[match.currentInning];
-  const otherInning = match.innings[match.currentInning === 0 ? 1 : 0];
+  const inningA = match.innings?.[0] || { totalRuns: 0, wickets: 0, overs: 0, balls: 0 };
+  const inningB = match.innings?.[1] || { totalRuns: 0, wickets: 0, overs: 0, balls: 0 };
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-slate-950 transition-colors">
@@ -63,14 +63,14 @@ const LiveMatchDetail: React.FC<LiveMatchDetailProps> = ({ match, onBack, onRefr
               <div className="flex justify-between items-center gap-4">
                  <div className="text-center flex-1">
                     <h3 className="text-xl font-black mb-1 italic">{match.teamA}</h3>
-                    <p className="text-3xl font-black tabular-nums">{match.innings[0].totalRuns}/{match.innings[0].wickets}</p>
-                    <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">{match.innings[0].overs}.{match.innings[0].balls} OV</p>
+                    <p className="text-3xl font-black tabular-nums">{inningA.totalRuns}/{inningA.wickets}</p>
+                    <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">{inningA.overs}.{inningA.balls} OV</p>
                  </div>
                  <div className="w-px h-12 bg-white/10"></div>
                  <div className="text-center flex-1">
                     <h3 className="text-xl font-black mb-1 italic">{match.teamB}</h3>
-                    <p className="text-3xl font-black tabular-nums">{match.innings[1].totalRuns}/{match.innings[1].wickets}</p>
-                    <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">{match.innings[1].overs}.{match.innings[1].balls} OV</p>
+                    <p className="text-3xl font-black tabular-nums">{inningB.totalRuns}/{inningB.wickets}</p>
+                    <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">{inningB.overs}.{inningB.balls} OV</p>
                  </div>
               </div>
               <div className="bg-white/10 py-3 rounded-2xl text-center border border-white/10">
@@ -107,7 +107,7 @@ const LiveMatchDetail: React.FC<LiveMatchDetailProps> = ({ match, onBack, onRefr
            <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar px-1">
               {isLoading ? (
                 [1,2,3,4,5,6].map(i => <div key={i} className="min-w-[140px] h-[180px] rounded-3xl animate-pulse bg-slate-100 dark:bg-slate-800"></div>)
-              ) : overData.map((ball, i) => (
+              ) : overData.length > 0 ? overData.map((ball, i) => (
                 <div key={i} className="min-w-[160px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-5 shadow-lg group hover:border-blue-500 transition-all">
                    <div className="flex items-center justify-between mb-3">
                       <span className="text-[10px] font-black text-slate-400 uppercase">Ball {ball.ball}</span>
@@ -124,7 +124,11 @@ const LiveMatchDetail: React.FC<LiveMatchDetailProps> = ({ match, onBack, onRefr
                       <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Inning {match.currentInning + 1}</span>
                    </div>
                 </div>
-              ))}
+              )) : (
+                <div className="w-full text-center py-10 text-slate-400 text-xs font-bold uppercase tracking-widest">
+                  Recent ball data not available yet
+                </div>
+              )}
            </div>
         </section>
 
