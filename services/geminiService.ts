@@ -18,7 +18,7 @@ export const getMatchInsights = async (match: Match): Promise<string> => {
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       contents: prompt,
     });
     return response.text || "No insights available.";
@@ -45,7 +45,7 @@ export const fetchLiveInternationalMatches = async (): Promise<Match[]> => {
     - battingTeam (string, either teamA or teamB)`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
@@ -58,8 +58,14 @@ export const fetchLiveInternationalMatches = async (): Promise<Match[]> => {
     const urls = groundingChunks?.map((chunk: any) => chunk.web?.uri).filter(Boolean) || [];
     const sourceString = urls.length > 0 ? `Sources: ${urls.join(', ')}` : "Search Grounding";
 
-    // Attempting to parse text output which should be valid JSON due to responseMimeType config
-    const data = JSON.parse(response.text || "[]");
+    // Attempting to parse text output with safety check for Search Grounding output
+    let data = [];
+    try {
+      const text = response.text || "[]";
+      data = JSON.parse(text);
+    } catch (e) {
+      console.warn("Could not parse match data JSON, response might contain grounding markup:", response.text);
+    }
     
     return data.map((item: any, index: number) => {
       const parseScore = (scoreStr: string) => {
@@ -132,7 +138,7 @@ export const fetchRecentOverInsights = async (match: Match): Promise<{ball: numb
     Make it exciting and varied based on current match situation.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
@@ -140,7 +146,13 @@ export const fetchRecentOverInsights = async (match: Match): Promise<{ball: numb
       },
     });
 
-    return JSON.parse(response.text || "[]");
+    let data = [];
+    try {
+      data = JSON.parse(response.text || "[]");
+    } catch (e) {
+      console.warn("Could not parse over insights JSON");
+    }
+    return data;
   } catch (error) {
     return [];
   }

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { X, Trophy, Users, ChevronRight, Hash, UserPlus, Coins } from 'lucide-react';
-import { Match, MatchType, MatchStatus, Inning, PlayerMatchStats } from '../types';
+import { Match, MatchType, MatchStatus, PlayerMatchStats } from '../types';
 
 interface CreateMatchFormProps {
   onClose: () => void;
@@ -18,8 +18,6 @@ const CreateMatchForm: React.FC<CreateMatchFormProps> = ({ onClose, onSave }) =>
   const [squadB, setSquadB] = useState<string[]>([]);
   const [currentInputA, setCurrentInputA] = useState('');
   const [currentInputB, setCurrentInputB] = useState('');
-  
-  // Toss State
   const [tossWinner, setTossWinner] = useState('');
   const [tossDecision, setTossDecision] = useState<'bat' | 'bowl'>('bat');
 
@@ -44,16 +42,20 @@ const CreateMatchForm: React.FC<CreateMatchFormProps> = ({ onClose, onSave }) =>
     const numOvers = parseInt(overs);
     const numPlayers = parseInt(playerCount);
 
-    if (!teamA || !teamB || isNaN(numOvers) || numOvers <= 0 || !venue || !tossWinner) {
-      alert("Please fill all fields, including toss details.");
+    if (!teamA || !teamB || isNaN(numOvers) || numOvers <= 0 || !venue) {
+      alert("Please fill in team names, overs, and venue.");
       return;
     }
 
-    // Determine who bats first
+    if (!tossWinner) {
+      alert("Please select who won the toss!");
+      return;
+    }
+
+    // Determine batting order based on toss winner and decision
     const teamBatsFirst = tossDecision === 'bat' ? tossWinner : (tossWinner === teamA ? teamB : teamA);
     const teamBowlsFirst = teamBatsFirst === teamA ? teamB : teamA;
 
-    // Helper to generate squad with placeholders
     const getFinalSquad = (customSquad: string[], teamName: string) => {
       const final = [...customSquad];
       for (let i = final.length; i < numPlayers; i++) {
@@ -68,7 +70,7 @@ const CreateMatchForm: React.FC<CreateMatchFormProps> = ({ onClose, onSave }) =>
     const createInitialStats = (squad: string[]) => {
       const stats: Record<string, PlayerMatchStats> = {};
       squad.forEach((name, idx) => {
-        const id = `p-${idx}-${Date.now()}`;
+        const id = `p-${idx}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         stats[id] = {
           id, name, runs: 0, balls: 0, fours: 0, sixes: 0,
           overs: 0, ballsBowled: 0, runsConceded: 0, wickets: 0, isOut: false
@@ -77,9 +79,8 @@ const CreateMatchForm: React.FC<CreateMatchFormProps> = ({ onClose, onSave }) =>
       return stats;
     };
 
-    // Correctly assign innings based on toss
-    const firstBattingSquad = teamBatsFirst === teamA ? finalSquadA : finalSquadB;
-    const secondBattingSquad = teamBatsFirst === teamA ? finalSquadB : finalSquadA;
+    const firstBattingSquadNames = teamBatsFirst === teamA ? finalSquadA : finalSquadB;
+    const secondBattingSquadNames = teamBatsFirst === teamA ? finalSquadB : finalSquadA;
 
     const newMatch: Match = {
       id: `local-${Date.now()}`,
@@ -90,24 +91,22 @@ const CreateMatchForm: React.FC<CreateMatchFormProps> = ({ onClose, onSave }) =>
       overs: numOvers,
       playerCount: numPlayers,
       status: MatchStatus.LIVE,
-      statusText: 'In Progress',
+      statusText: 'Match Started',
       venue,
       date: new Date().toISOString().split('T')[0],
       innings: [
         { 
           teamId: teamBatsFirst, 
           totalRuns: 0, wickets: 0, overs: 0, balls: 0, deliveries: [],
-          playerStats: createInitialStats(firstBattingSquad)
+          playerStats: createInitialStats(firstBattingSquadNames)
         },
         { 
           teamId: teamBowlsFirst, 
           totalRuns: 0, wickets: 0, overs: 0, balls: 0, deliveries: [],
-          playerStats: createInitialStats(secondBattingSquad)
+          playerStats: createInitialStats(secondBattingSquadNames)
         }
       ],
       currentInning: 0,
-      squadA: finalSquadA,
-      squadB: finalSquadB,
       tossWinner,
       tossDecision
     };
@@ -116,143 +115,140 @@ const CreateMatchForm: React.FC<CreateMatchFormProps> = ({ onClose, onSave }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
-        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
-           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-emerald-600 rounded-2xl flex items-center justify-center">
-               <Trophy className="text-white" size={20} />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-2xl animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3.5rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-500">
+        <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+           <div className="flex items-center gap-6">
+             <div className="w-16 h-16 bg-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-indigo-600/30">
+               <Trophy className="text-white" size={32} />
              </div>
-             <h2 className="text-xl font-black italic dark:text-white uppercase tracking-tight">Setup Local Match</h2>
+             <div>
+               <h2 className="text-3xl font-black italic dark:text-white uppercase tracking-tighter leading-none">Console Setup</h2>
+               <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.4em] mt-2 italic">Initialization Layer</p>
+             </div>
            </div>
-           <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors">
-             <X size={20} className="text-slate-500" />
+           <button onClick={onClose} className="p-4 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-3xl transition-all">
+             <X size={28} className="text-slate-400" />
            </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-6 max-h-[80vh] overflow-y-auto no-scrollbar">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest ml-1">Team A Name</label>
+        <form onSubmit={handleSubmit} className="p-10 space-y-10 max-h-[75vh] overflow-y-auto no-scrollbar">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="space-y-5">
+              <label className="text-[11px] uppercase font-black text-slate-400 tracking-[0.3em] ml-2 italic">Team A Name</label>
               <input 
                 value={teamA} onChange={e => setTeamA(e.target.value)} required
-                placeholder="Tech Titans"
-                className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:border-emerald-500 outline-none transition-all font-bold dark:text-white"
+                placeholder="HOST TEAM"
+                className="w-full px-8 py-5 rounded-3xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none transition-all font-black dark:text-white uppercase italic"
               />
-              <div className="space-y-2">
-                <label className="text-[9px] uppercase font-bold text-slate-400">Add Players (Optional)</label>
-                <div className="flex gap-2">
-                  <input 
-                    value={currentInputA} onChange={e => setCurrentInputA(e.target.value)}
-                    placeholder="Enter player name"
-                    className="flex-1 px-4 py-2 text-sm rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 outline-none font-bold dark:text-white"
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPlayer('A'))}
-                  />
-                  <button type="button" onClick={() => addPlayer('A')} className="p-2 bg-blue-600 text-white rounded-xl"><UserPlus size={18}/></button>
-                </div>
-                <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
-                   {squadA.map((p, i) => <span key={i} className="text-[9px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">{p}</span>)}
-                </div>
+              <div className="flex gap-3">
+                <input 
+                  value={currentInputA} onChange={e => setCurrentInputA(e.target.value)}
+                  placeholder="ADD PLAYER"
+                  className="flex-1 px-5 py-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 outline-none text-xs font-black uppercase tracking-widest italic"
+                  onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addPlayer('A'))}
+                />
+                <button type="button" onClick={() => addPlayer('A')} className="p-4 bg-indigo-600 text-white rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-lg"><UserPlus size={20}/></button>
               </div>
+              <div className="flex flex-wrap gap-2">{squadA.map((p, i) => <span key={i} className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-lg text-[9px] font-black uppercase tracking-tighter">{p}</span>)}</div>
             </div>
             
-            <div className="space-y-4">
-              <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest ml-1">Team B Name</label>
+            <div className="space-y-5">
+              <label className="text-[11px] uppercase font-black text-slate-400 tracking-[0.3em] ml-2 italic">Team B Name</label>
               <input 
                 value={teamB} onChange={e => setTeamB(e.target.value)} required
-                placeholder="Code Crushers"
-                className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:border-emerald-500 outline-none transition-all font-bold dark:text-white"
+                placeholder="VISITOR TEAM"
+                className="w-full px-8 py-5 rounded-3xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none transition-all font-black dark:text-white uppercase italic"
               />
-              <div className="space-y-2">
-                <label className="text-[9px] uppercase font-bold text-slate-400">Add Players (Optional)</label>
-                <div className="flex gap-2">
-                  <input 
-                    value={currentInputB} onChange={e => setCurrentInputB(e.target.value)}
-                    placeholder="Enter player name"
-                    className="flex-1 px-4 py-2 text-sm rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 outline-none font-bold dark:text-white"
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPlayer('B'))}
-                  />
-                  <button type="button" onClick={() => addPlayer('B')} className="p-2 bg-blue-600 text-white rounded-xl"><UserPlus size={18}/></button>
-                </div>
-                <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
-                   {squadB.map((p, i) => <span key={i} className="text-[9px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">{p}</span>)}
-                </div>
+               <div className="flex gap-3">
+                <input 
+                  value={currentInputB} onChange={e => setCurrentInputB(e.target.value)}
+                  placeholder="ADD PLAYER"
+                  className="flex-1 px-5 py-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 outline-none text-xs font-black uppercase tracking-widest italic"
+                  onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addPlayer('B'))}
+                />
+                <button type="button" onClick={() => addPlayer('B')} className="p-4 bg-indigo-600 text-white rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-lg"><UserPlus size={20}/></button>
               </div>
+              <div className="flex flex-wrap gap-2">{squadB.map((p, i) => <span key={i} className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-lg text-[9px] font-black uppercase tracking-tighter">{p}</span>)}</div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-2 gap-6">
-             <div className="space-y-2">
-                <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest ml-1 flex items-center gap-1">
-                  <Hash size={10}/> Match Overs
-                </label>
+          <div className="grid grid-cols-2 gap-10">
+             <div className="space-y-4">
+                <label className="text-[11px] uppercase font-black text-slate-400 tracking-[0.3em] ml-2 flex items-center gap-3 italic"><Hash size={16}/> Game Overs</label>
                 <input 
                   type="number" value={overs} onChange={e => setOvers(e.target.value)} required min="1"
-                  className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:border-emerald-500 outline-none transition-all font-bold dark:text-white"
+                  className="w-full px-8 py-5 rounded-3xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none transition-all font-black dark:text-white text-xl tabular-nums"
                 />
              </div>
-             <div className="space-y-2">
-                <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest ml-1 flex items-center gap-1">
-                  <Users size={10}/> Players Per Side
-                </label>
+             <div className="space-y-4">
+                <label className="text-[11px] uppercase font-black text-slate-400 tracking-[0.3em] ml-2 flex items-center gap-3 italic"><Users size={16}/> Players/Side</label>
                 <input 
                   type="number" value={playerCount} onChange={e => setPlayerCount(e.target.value)} required min="2"
-                  className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:border-emerald-500 outline-none transition-all font-bold dark:text-white"
+                  className="w-full px-8 py-5 rounded-3xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none transition-all font-black dark:text-white text-xl tabular-nums"
                 />
              </div>
           </div>
 
-          <div className="p-6 bg-slate-100 dark:bg-slate-800/40 rounded-3xl border border-slate-200 dark:border-slate-700 space-y-4">
-             <div className="flex items-center gap-2 mb-2">
-                <Coins size={16} className="text-amber-500" />
-                <h4 className="text-xs font-black uppercase tracking-widest italic">Toss Management</h4>
+          <div className="p-10 bg-slate-50 dark:bg-slate-800/40 rounded-[3rem] border border-slate-200 dark:border-slate-800/50 space-y-8">
+             <div className="flex items-center gap-4">
+                <Coins size={24} className="text-amber-500" />
+                <h4 className="text-lg font-black uppercase tracking-tighter italic">The Toss Control</h4>
              </div>
-             <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                   <label className="text-[9px] font-bold text-slate-500">Who won the toss?</label>
-                   <select 
-                    value={tossWinner} onChange={e => setTossWinner(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-sm outline-none dark:text-white"
-                   >
-                     <option value="">Select Team</option>
-                     {teamA && <option value={teamA}>{teamA}</option>}
-                     {teamB && <option value={teamB}>{teamB}</option>}
-                   </select>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                   <p className="text-[11px] font-black text-slate-400 uppercase ml-2 italic">Who won the toss?</p>
+                   <div className="flex bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-200 dark:border-slate-800 p-2">
+                      <button 
+                        type="button" onClick={() => setTossWinner(teamA)}
+                        disabled={!teamA}
+                        className={`flex-1 py-4 rounded-xl text-[11px] font-black transition-all truncate px-4 uppercase italic ${tossWinner === teamA ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      >
+                        {teamA || 'TEAM A'}
+                      </button>
+                      <button 
+                        type="button" onClick={() => setTossWinner(teamB)}
+                        disabled={!teamB}
+                        className={`flex-1 py-4 rounded-xl text-[11px] font-black transition-all truncate px-4 uppercase italic ${tossWinner === teamB ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      >
+                        {teamB || 'TEAM B'}
+                      </button>
+                   </div>
                 </div>
-                <div className="space-y-1">
-                   <label className="text-[9px] font-bold text-slate-500">Decision</label>
-                   <div className="flex bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-1">
+                <div className="space-y-3">
+                   <p className="text-[11px] font-black text-slate-400 uppercase ml-2 italic">Their Decision?</p>
+                   <div className="flex bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-200 dark:border-slate-800 p-2">
                       <button 
                         type="button" onClick={() => setTossDecision('bat')}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all ${tossDecision === 'bat' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}
+                        className={`flex-1 py-4 rounded-xl text-[11px] font-black transition-all uppercase italic ${tossDecision === 'bat' ? 'bg-amber-500 text-white shadow-xl' : 'text-slate-400'}`}
                       >
-                        BAT
+                        BATTING
                       </button>
                       <button 
                         type="button" onClick={() => setTossDecision('bowl')}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all ${tossDecision === 'bowl' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}
+                        className={`flex-1 py-4 rounded-xl text-[11px] font-black transition-all uppercase italic ${tossDecision === 'bowl' ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-400'}`}
                       >
-                        BOWL
+                        BOWLING
                       </button>
                    </div>
                 </div>
              </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest ml-1">Venue</label>
+          <div className="space-y-4">
+            <label className="text-[11px] uppercase font-black text-slate-400 tracking-[0.3em] ml-2 italic">Arena Venue</label>
             <input 
               value={venue} onChange={e => setVenue(e.target.value)} required
-              placeholder="Local Sports Ground"
-              className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:border-emerald-500 outline-none transition-all font-bold dark:text-white"
+              placeholder="E.G. MADISON SQUARE GROUND"
+              className="w-full px-8 py-5 rounded-3xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none transition-all font-black dark:text-white uppercase italic"
             />
           </div>
 
           <button 
             type="submit"
-            className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-3xl transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-2"
+            className="w-full py-7 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-full transition-all shadow-2xl shadow-indigo-600/40 flex items-center justify-center gap-4 text-2xl uppercase italic tracking-tighter"
           >
-            START MATCH <ChevronRight size={20} />
+            Launch Scorer Console <ChevronRight size={32} />
           </button>
         </form>
       </div>

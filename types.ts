@@ -20,15 +20,58 @@ export enum ExtraType {
   LEG_BYE = 'LEG_BYE'
 }
 
-export interface PlayerStats {
+export enum UserTier {
+  FREE = 'FREE',
+  PRO = 'PRO'
+}
+
+export interface BattingCareer {
   matches: number;
+  innings: number;
   runs: number;
+  highScore: number;
+  average: number;
+  strikeRate: number;
+  ballsFaced: number;
+  fours: number;
+  sixes: number;
+  fifties: number;
+  hundreds: number;
+  ducks: number;
+  notOuts: number;
+}
+
+export interface BowlingCareer {
+  matches: number;
+  overs: number;
+  runsConceded: number;
   wickets: number;
+  average: number;
   strikeRate: number;
   economy: number;
-  average: number;
-  highScore: number;
+  threeWktHauls: number;
+  fiveWktHauls: number;
   bestBowling: string;
+}
+
+export interface FieldingCareer {
+  matches: number;
+  catches: number;
+  runOuts: number;
+  stumpings: number;
+  totalDismissals: number;
+}
+
+export interface PlayerProfile {
+  id: string;
+  name: string;
+  country: string;
+  role: 'Batsman' | 'Bowler' | 'All-rounder' | 'Wicketkeeper';
+  battingStyle: 'Right-hand' | 'Left-hand';
+  bowlingStyle?: string;
+  batting: BattingCareer;
+  bowling: BowlingCareer;
+  fielding: FieldingCareer;
 }
 
 export interface PlayerMatchStats {
@@ -49,7 +92,7 @@ export interface Player {
   id: string;
   name: string;
   role: 'batsman' | 'bowler' | 'all-rounder';
-  stats: PlayerStats;
+  stats: any;
 }
 
 export interface Delivery {
