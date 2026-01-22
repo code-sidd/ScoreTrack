@@ -1,6 +1,6 @@
 
 <div align="center">
-  <img src="./cric_screen.png" width="900" height="350" alt="Banner" />
+  <img src="./cric_screen.png" width="800" height="450" alt="Banner" />
 </div>
 
 # Run and deploy your AI Studio app
