@@ -1,5 +1,5 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner"  ![Alt Text](file:"///Users/siri/Documents/Training/PRD/crickpr.png") /> 
+<img width="1200" height="475" alt="GHBanner"  ![Alt Text](file:"crickpr.png") /> 
 </div>
 
 # Run and deploy your AI Studio app
